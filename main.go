@@ -5,6 +5,14 @@ import (
 	"net/http"
 )
 
+func main() {
+	router := gin.Default()
+	router.GET("/albums", getAlbums)
+	router.POST("/albums", postAlbums)
+	router.GET("/albums/:id", getAlbumByID)
+	router.Run("localhost:8080")
+}
+
 // album 表示有关专辑的数据.
 type album struct {
 	ID     string  `json:"id"`
@@ -26,8 +34,32 @@ func getAlbums(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, albums)
 }
 
-func main() {
-	router := gin.Default()
-	router.GET("/albums", getAlbums)
-	router.Run("localhost:8080")
+// postAlbums 从请求体中收到的JSON中添加一个专辑 .
+func postAlbums(c *gin.Context) {
+	var newAlbum album
+
+	// 调用 BindJSON 将收到的 JSON 绑定到
+	// newAlbum.
+	if err := c.BindJSON(&newAlbum); err != nil {
+		return
+	}
+
+	// 将新专辑添加到切片.
+	albums = append(albums, newAlbum)
+	c.IndentedJSON(http.StatusCreated, newAlbum)
+}
+
+// getAlbumByID 查找 ID 值与客户端发送的 id
+// 参数匹配的专辑，然后返回该专辑作为响应.
+func getAlbumByID(c *gin.Context) {
+	id := c.Param("id")
+	// 循环浏览专辑列表，查找
+	// ID 值与参数匹配的专辑.
+	for _, a := range albums {
+		if a.ID == id {
+			c.IndentedJSON(http.StatusOK, a)
+			return
+		}
+	}
+	c.IndentedJSON(http.StatusNotFound, gin.H{"message": "album not found"})
 }
